@@ -21,53 +21,53 @@ const calculatePCMScore = () => {
 
     let correctAnswersPhysics = 0;
     let wrongAnswersPhysics = 0;
+    let unattemptedPhysics = 0;
     let correctAnswersChemistry = 0;
     let wrongAnswersChemistry = 0;
+    let unattemptedChemistry = 0;
     let correctAnswersMathematics = 0;
     let wrongAnswersMathematics = 0;
+    let unattemptedMathematics = 0;
 
     rows.forEach((row, index) => {
       const correctOptionElement = row.querySelector('td:nth-child(3) > table.table.table-responsive.table-bordered.center > tbody > tr > td:nth-child(1) > span');
       const candidateResponseElement = row.querySelector('td:nth-child(3) > table.table.table-responsive.table-bordered.center > tbody > tr > td:nth-child(2) > span');
 
-      if (!correctOptionElement || !candidateResponseElement) {
-        throw new Error(`Could not find answer elements for question ${index + 1}. Please make sure you're on the correct page.`);
-      }
-
-      const correctOption = correctOptionElement.textContent.trim();
-      const candidateResponse = candidateResponseElement.textContent.trim();
-
-      if (!correctOption || !candidateResponse) {
-        throw new Error(`Missing answer data for question ${index + 1}. Please refresh the page and try again.`);
-      }
+      const correctOption = correctOptionElement ? correctOptionElement.textContent.trim() : '';
+      const candidateResponse = candidateResponseElement ? candidateResponseElement.textContent.trim() : '';
 
       if (index < 50) {
-        correctOption === candidateResponse ? correctAnswersPhysics++ : wrongAnswersPhysics++;
+        if (!candidateResponse) {
+          unattemptedPhysics++;
+        } else if (correctOption === candidateResponse) {
+          correctAnswersPhysics++;
+        } else {
+          wrongAnswersPhysics++;
+        }
       } else if (index < 100) {
-        correctOption === candidateResponse ? correctAnswersChemistry++ : wrongAnswersChemistry++;
+        if (!candidateResponse) {
+          unattemptedChemistry++;
+        } else if (correctOption === candidateResponse) {
+          correctAnswersChemistry++;
+        } else {
+          wrongAnswersChemistry++;
+        }
       } else {
-        correctOption === candidateResponse ? correctAnswersMathematics++ : wrongAnswersMathematics++;
+        if (!candidateResponse) {
+          unattemptedMathematics++;
+        } else if (correctOption === candidateResponse) {
+          correctAnswersMathematics++;
+        } else {
+          wrongAnswersMathematics++;
+        }
       }
     });
-
-    // Validate the counts
-    const totalPhysics = correctAnswersPhysics + wrongAnswersPhysics;
-    const totalChemistry = correctAnswersChemistry + wrongAnswersChemistry;
-    const totalMathematics = correctAnswersMathematics + wrongAnswersMathematics;
-
-    if (totalPhysics !== 50 || totalChemistry !== 50 || totalMathematics !== 50) {
-      throw new Error(`Invalid question count detected. Expected 50 questions each for Physics, Chemistry, and Mathematics. Found: Physics=${totalPhysics}, Chemistry=${totalChemistry}, Mathematics=${totalMathematics}`);
-    }
 
     // Calculate total score with Mathematics having double weight
     const totalScore = correctAnswersPhysics + correctAnswersChemistry + (correctAnswersMathematics * 2);
 
     return {
-      output: `
-Physics - Correct Answers: ${correctAnswersPhysics}, Wrong Answers: ${wrongAnswersPhysics}
-Chemistry - Correct Answers: ${correctAnswersChemistry}, Wrong Answers: ${wrongAnswersChemistry}
-Mathematics - Correct Answers: ${correctAnswersMathematics}, Wrong Answers: ${wrongAnswersMathematics}
-Total Score: ${totalScore} out of 200`
+      output: `\nPhysics - Correct Answers: ${correctAnswersPhysics}, Wrong Answers: ${wrongAnswersPhysics}, Unattempted: ${unattemptedPhysics}\nChemistry - Correct Answers: ${correctAnswersChemistry}, Wrong Answers: ${wrongAnswersChemistry}, Unattempted: ${unattemptedChemistry}\nMathematics - Correct Answers: ${correctAnswersMathematics}, Wrong Answers: ${wrongAnswersMathematics}, Unattempted: ${unattemptedMathematics}\nTotal Score: ${totalScore} out of 200`
     };
   } catch (error) {
     return {
@@ -107,9 +107,9 @@ document.getElementById("calculate").addEventListener("click", async () => {
     }
 
     // Parse the output
-    const physicsMatch = output.match(/Physics - Correct Answers: (\d+), Wrong Answers: (\d+)/);
-    const chemistryMatch = output.match(/Chemistry - Correct Answers: (\d+), Wrong Answers: (\d+)/);
-    const mathematicsMatch = output.match(/Mathematics - Correct Answers: (\d+), Wrong Answers: (\d+)/);
+    const physicsMatch = output.match(/Physics - Correct Answers: (\d+), Wrong Answers: (\d+), Unattempted: (\d+)/);
+    const chemistryMatch = output.match(/Chemistry - Correct Answers: (\d+), Wrong Answers: (\d+), Unattempted: (\d+)/);
+    const mathematicsMatch = output.match(/Mathematics - Correct Answers: (\d+), Wrong Answers: (\d+), Unattempted: (\d+)/);
     const totalMatch = output.match(/Total Score: (\d+)/);
 
     if (!physicsMatch || !chemistryMatch || !mathematicsMatch || !totalMatch) {
@@ -119,15 +119,15 @@ document.getElementById("calculate").addEventListener("click", async () => {
     // Calculate unattempted questions for each subject
     const physicsCorrect = parseInt(physicsMatch[1]);
     const physicsWrong = parseInt(physicsMatch[2]);
-    const physicsUnattempted = 50 - physicsCorrect - physicsWrong;
+    const physicsUnattempted = parseInt(physicsMatch[3]);
 
     const chemistryCorrect = parseInt(chemistryMatch[1]);
     const chemistryWrong = parseInt(chemistryMatch[2]);
-    const chemistryUnattempted = 50 - chemistryCorrect - chemistryWrong;
+    const chemistryUnattempted = parseInt(chemistryMatch[3]);
 
     const mathematicsCorrect = parseInt(mathematicsMatch[1]);
     const mathematicsWrong = parseInt(mathematicsMatch[2]);
-    const mathematicsUnattempted = 50 - mathematicsCorrect - mathematicsWrong;
+    const mathematicsUnattempted = parseInt(mathematicsMatch[3]);
 
     // Update the score cards
     document.getElementById('physics-correct').textContent = physicsCorrect;
